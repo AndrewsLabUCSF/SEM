@@ -1,0 +1,425 @@
+---
+title: "Invariance testing"
+format: html
+editor: visual
+---
+
+
+### Sex
+
+```{r}
+sem_model_sex = '# Latent variables
+  AD_pathology =~ ptau181_residual + ptau217_ab42_residual + ab_suvr + ab_pos_new
+  Neurodegeneration =~ nfl_residual + meta_roi_inv + hippcampul_residual_inv
+  Cognition =~ zscore_interm_wms_mem_inv + zscore_interm_sevlt_inv + zscore_delay_wms_mem_inv + zscore_delay_svelt_inv + zscore_wms_digit_inv + zscore_trail_ab_inv + zscore_fas_inv + zscore_animal_naming_inv
+
+  # Covariances
+  meta_roi_inv ~~ hippcampul_residual_inv
+  zscore_interm_wms_mem_inv ~~ zscore_delay_wms_mem_inv
+  zscore_interm_sevlt_inv ~~ zscore_delay_svelt_inv
+  zscore_fas_inv ~~ zscore_animal_naming_inv
+  ab_suvr ~~ ab_pos_new
+
+  AD_pathology ~~ Neurodegeneration
+  Neurodegeneration ~~ Cognition
+
+  # Structural regressions
+  AD_pathology ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + lang_Spanish + age_z + PC1 + PC2 + PC3 + PC4
+  Neurodegeneration ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + lang_Spanish + age_z + PC1 + PC2 + PC3 + PC4
+  Cognition ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + lang_Spanish + age_z + PC1 + PC2 + PC3 + PC4'
+
+# Free structural paths; loadings equal
+fit_sex_free = sem(
+  sem_model_sex,
+  data = sem_data_sdoh,
+  group = "sex",
+  group.equal = c("loadings"),
+  missing = "fiml",
+  fixed.x = TRUE)
+
+# Constrain structural paths 
+fit_sex_equal = sem(
+  sem_model_sex,
+  data = sem_data_sdoh,
+  group = "sex",
+  group.equal = c("loadings", "regressions"),
+  missing = "fiml",
+  fixed.x = TRUE)
+
+# Chi-square difference test: do the structural paths differ by sex?
+lavTestLRT(fit_sex_free, fit_sex_equal)
+
+# Model summaries
+summary(fit_sex_free, fit.measures = TRUE, standardized = TRUE)
+summary(fit_sex_equal, fit.measures = TRUE, standardized = TRUE)
+
+```
+
+
+### Race
+
+
+```{r}
+sem_model_race = '# Latent variables
+  AD_pathology =~ ptau181_residual + ptau217_ab42_residual + ab_suvr + ab_pos_new
+  Neurodegeneration =~ nfl_residual + meta_roi_inv + hippcampul_residual_inv
+  Cognition =~ zscore_interm_wms_mem_inv + zscore_interm_sevlt_inv + zscore_delay_wms_mem_inv + zscore_delay_svelt_inv + zscore_wms_digit_inv + zscore_trail_ab_inv + zscore_fas_inv + zscore_animal_naming_inv
+
+  # Covariances
+  meta_roi_inv ~~ hippcampul_residual_inv
+  zscore_interm_wms_mem_inv ~~ zscore_delay_wms_mem_inv
+  zscore_interm_sevlt_inv ~~ zscore_delay_svelt_inv
+  zscore_fas_inv ~~ zscore_animal_naming_inv
+  ab_suvr ~~ ab_pos_new
+
+  AD_pathology ~~ Neurodegeneration
+  Neurodegeneration ~~ Cognition
+
+  # Structural regressions
+  AD_pathology ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + age_z + sex + PC1 + PC2 + PC3 + PC4
+  Neurodegeneration ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + age_z + sex + PC1 + PC2 + PC3 + PC4
+  Cognition ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + age_z + sex + PC1 + PC2 + PC3 + PC4'
+
+
+# Free structural paths across race groups, but keep factor loadings equal
+fit_race_free = sem(
+  sem_model_race, 
+  data = sem_data_sdoh, 
+  group = "race", 
+  group.equal = c("loadings"), 
+  missing = "fiml", 
+  fixed.x = TRUE)
+
+# Constrain structural paths to be equal across race groups
+fit_race_equal = sem(
+  sem_model_race, 
+  data = sem_data_sdoh, 
+  group = "race", 
+  group.equal = c("loadings", "regressions"), 
+  missing = "fiml", 
+  fixed.x = TRUE)
+
+# Chi-square difference test: do the structural paths differ by race?
+lavTestLRT(fit_race_free, fit_race_equal)
+
+# Model summaries
+summary(fit_race_free, fit.measures = TRUE, standardized = TRUE)
+summary(fit_race_equal, fit.measures = TRUE, standardized = TRUE)
+
+# Test one perdictor at a time: PRS
+fit_prs = sem(
+  sem_model_race,
+  data = sem_data_sdoh,
+  group = "race",
+  group.equal = c("loadings","regressions"),
+  group.partial = c(
+    "AD_pathology ~ prs_z_prscsx",
+    "Neurodegeneration ~ prs_z_prscsx",
+    "Cognition ~ prs_z_prscsx"),
+  missing = "fiml", fixed.x = TRUE)
+
+lavTestLRT(fit_race_equal, fit_prs)
+
+
+# APOE
+fit_apoe = sem(
+  sem_model_race,
+  data = sem_data_sdoh,
+  group = "race",
+  group.equal = c("loadings","regressions"),
+  group.partial = c(
+    "AD_pathology ~ apoe4",
+    "Neurodegeneration ~ apoe4",
+    "Cognition ~ apoe4"),
+  missing = "fiml", fixed.x = TRUE)
+
+lavTestLRT(fit_race_equal, fit_apoe)
+
+
+# CogDRisk
+fit_cog = sem(
+  sem_model_race,
+  data = sem_data_sdoh,
+  group = "race",
+  group.equal = c("loadings","regressions"),
+  group.partial = c(
+    "AD_pathology ~ cogd_sem",
+    "Neurodegeneration ~ cogd_sem",
+    "Cognition ~ cogd_sem"),
+  missing = "fiml", fixed.x = TRUE)
+
+lavTestLRT(fit_race_equal, fit_cog)
+
+
+# SDoH
+fit_sdoh = sem(
+  sem_model_race,
+  data = sem_data_sdoh,
+  group = "race",
+  group.equal = c("loadings","regressions"),
+  group.partial = c(
+    "AD_pathology ~ SDoH",
+    "Neurodegeneration ~ SDoH",
+    "Cognition ~ SDoH"),
+  missing = "fiml", fixed.x = TRUE)
+
+lavTestLRT(fit_race_equal, fit_sdoh)
+
+
+# inspect heterogeneity in APOE effects
+fit_apoe_AD = sem(
+  sem_model_race,
+  data = sem_data_sdoh,
+  group = "race",
+  group.equal = c("loadings","regressions"),
+  group.partial = "AD_pathology ~ apoe4",
+  missing = "fiml",
+  fixed.x = TRUE)
+
+lavTestLRT(fit_race_equal, fit_apoe_AD)
+
+
+fit_apoe_neuro = sem(
+  sem_model_race,
+  data = sem_data_sdoh,
+  group = "race",
+  group.equal = c("loadings","regressions"),
+  group.partial = "Neurodegeneration ~ apoe4",
+  missing = "fiml",
+  fixed.x = TRUE)
+
+lavTestLRT(fit_race_equal, fit_apoe_neuro)
+
+
+fit_apoe_cog = sem(
+  sem_model_race,
+  data = sem_data_sdoh,
+  group = "race",
+  group.equal = c("loadings","regressions"),
+  group.partial = "Cognition ~ apoe4",
+  missing = "fiml",
+  fixed.x = TRUE)
+
+lavTestLRT(fit_race_equal, fit_apoe_cog)
+
+
+subset(
+    standardizedSolution(fit_apoe_AD),
+    op == "~" &
+    lhs == "AD_pathology" &
+    rhs == "apoe4")
+
+```
+
+
+### APOE effects
+
+
+```{r}
+
+# Pairwise test function for APOE -> AD pathology
+pairwise_apoe_ad = function(dat, g1, g2, model = sem_model_race) {
+
+  # keep only the two groups
+  d = subset(dat, race %in% c(g1, g2))
+  d$race = factor(d$race, levels = c(g1, g2))
+
+  # model with APOE -> AD constrained equal across the 2 groups
+  fit_equal = sem(
+    model,
+    data = d,
+    group = "race",
+    group.equal = c("loadings", "regressions"),
+    missing = "fiml",
+    fixed.x = TRUE
+  )
+
+  # model with APOE -> AD allowed to differ across the 2 groups
+  fit_free = sem(
+    model,
+    data = d,
+    group = "race",
+    group.equal = c("loadings", "regressions"),
+    group.partial = "AD_pathology ~ apoe4",
+    missing = "fiml",
+    fixed.x = TRUE
+  )
+
+  # likelihood ratio test
+  lrt = lavTestLRT(fit_equal, fit_free)
+
+  # standardized APOE -> AD estimates in the free model
+  est = subset(
+    standardizedSolution(fit_free),
+    op == "~" & lhs == "AD_pathology" & rhs == "apoe4"
+  )
+
+  data.frame(
+    comparison = paste(g1, "vs", g2),
+    chisq_diff  = lrt[2, "Chisq diff"],
+    df_diff     = lrt[2, "Df diff"],
+    p_value     = lrt[2, "Pr(>Chisq)"],
+    beta_g1     = est$est.std[est$group == 1],
+    beta_g2     = est$est.std[est$group == 2]
+  )
+}
+
+
+race_pairs = combn(c("NHW", "Black", "Hispanic"), 2, simplify = FALSE)
+
+pairwise_results = do.call(
+  rbind,
+  lapply(race_pairs, function(x) pairwise_apoe_ad(sem_data_sdoh, x[1], x[2]))
+)
+
+pairwise_results$p_adj = p.adjust(pairwise_results$p_value, method = "holm")
+pairwise_results
+
+```
+
+
+```{r}
+# Extract model fit for one lavaan object
+fit_row = function(fit, model_name) {
+  fm = fitMeasures(fit, c("chisq", "df", "tli", "cfi", "rmsea", "srmr"))
+  tibble(
+    Model = model_name,
+    X2    = unname(fm["chisq"]),
+    df    = unname(fm["df"]),
+    TLI   = unname(fm["tli"]),
+    CFI   = unname(fm["cfi"]),
+    RMSEA = unname(fm["rmsea"]),
+    SRMR  = unname(fm["srmr"])
+  )
+}
+
+# Add LRT stats to the second row of a two-model comparison
+add_lrt = function(tbl, fit_free, fit_equal) {
+  lrt = lavTestLRT(fit_free, fit_equal)
+
+  tbl %>%
+    mutate(
+      Delta_X2 = c(NA, unname(lrt[2, "Chisq diff"])),
+      Delta_df = c(NA, unname(lrt[2, "Df diff"])),
+      p_LRT    = c(NA, unname(lrt[2, "Pr(>Chisq)"]))
+    )
+}
+
+pretty_tbl = function(x) {
+  x %>%
+    mutate(across(where(is.numeric), ~ round(.x, 3)))
+}
+
+
+sex_tbl = bind_rows(
+  fit_row(fit_sex_free,  "Free structural paths"),
+  fit_row(fit_sex_equal, "Equal structural paths")
+) %>%
+  add_lrt(fit_sex_free, fit_sex_equal) %>%
+  pretty_tbl()
+
+
+race_tbl = bind_rows(
+  fit_row(fit_race_free,  "Free structural paths"),
+  fit_row(fit_race_equal, "Equal structural paths")
+) %>%
+  add_lrt(fit_race_free, fit_race_equal) %>%
+  pretty_tbl()
+
+
+race_pred_tbl = bind_rows(
+  fit_row(fit_prs,  "PRS freed"),
+  fit_row(fit_apoe, "APOE freed"),
+  fit_row(fit_cog,  "CogD freed"),
+  fit_row(fit_sdoh, "SDoH freed")
+) %>%
+  mutate(
+    Delta_X2 = c(
+      unname(lavTestLRT(fit_race_equal, fit_prs)[2, "Chisq diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe)[2, "Chisq diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_cog)[2, "Chisq diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_sdoh)[2, "Chisq diff"])
+    ),
+    Delta_df = c(
+      unname(lavTestLRT(fit_race_equal, fit_prs)[2, "Df diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe)[2, "Df diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_cog)[2, "Df diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_sdoh)[2, "Df diff"])
+    ),
+    p_LRT = c(
+      unname(lavTestLRT(fit_race_equal, fit_prs)[2, "Pr(>Chisq)"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe)[2, "Pr(>Chisq)"]),
+      unname(lavTestLRT(fit_race_equal, fit_cog)[2, "Pr(>Chisq)"]),
+      unname(lavTestLRT(fit_race_equal, fit_sdoh)[2, "Pr(>Chisq)"])
+    )
+  ) %>%
+  pretty_tbl()
+
+
+apoe_outcome_tbl = bind_rows(
+  fit_row(fit_apoe_AD,    "APOE ~ Aβ/tau"),
+  fit_row(fit_apoe_neuro, "APOE ~ Neurodegeneration"),
+  fit_row(fit_apoe_cog,   "APOE ~ Cognition")
+) %>%
+  mutate(
+    Delta_X2 = c(
+      unname(lavTestLRT(fit_race_equal, fit_apoe_AD)[2, "Chisq diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe_neuro)[2, "Chisq diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe_cog)[2, "Chisq diff"])
+    ),
+    Delta_df = c(
+      unname(lavTestLRT(fit_race_equal, fit_apoe_AD)[2, "Df diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe_neuro)[2, "Df diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe_cog)[2, "Df diff"])
+    ),
+    p_LRT = c(
+      unname(lavTestLRT(fit_race_equal, fit_apoe_AD)[2, "Pr(>Chisq)"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe_neuro)[2, "Pr(>Chisq)"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe_cog)[2, "Pr(>Chisq)"])
+    )
+  ) %>%
+  pretty_tbl()
+
+
+pairwise_results_tbl = pairwise_results %>%
+  select(-p_value) %>%
+  pretty_tbl() %>%
+  dplyr::rename(
+    Comparison = comparison,
+    `ΔX2` = chisq_diff,
+    `Δdf` = df_diff,
+    `β2` = beta_g1,
+    `β1` = beta_g2,
+    `P-Value adj.` = p_adj)
+
+
+sex_tbl2 = sex_tbl %>% mutate(Analysis = "Sex: Overall")
+race_tbl2 = race_tbl %>% mutate(Analysis = "Race: Overall")
+race_pred_tbl2 = race_pred_tbl %>% mutate(Analysis = "Race: Regression coefficients")
+apoe_outcome_tbl2 = apoe_outcome_tbl %>% mutate(Analysis = "Race: APOE")
+
+all_tbl = bind_rows(
+  sex_tbl2,
+  race_tbl2,
+  race_pred_tbl2,
+  apoe_outcome_tbl2
+) %>%
+  select(Analysis, everything()) 
+
+all_tbl = all_tbl %>%
+  dplyr::rename(
+    Analysis = Analysis,
+    Model = Model,
+    X2 = X2,
+    df = df,
+    TLI = TLI,
+    CFI = CFI,
+    RMSEA = RMSEA,
+    SRMR = SRMR,
+    `ΔX2` = `Delta_X2`,
+    `Δdf` = `Delta_df`,
+    `P-value adj.` = p_LRT
+  )
+
+
+```

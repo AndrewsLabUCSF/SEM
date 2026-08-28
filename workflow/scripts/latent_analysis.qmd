@@ -1,0 +1,842 @@
+---
+title: "Latent Variable Analysis"
+format: html
+editor: visual
+---
+
+### Setup
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(scales)
+library(lavaan)
+library(plotgardener)
+```
+
+### CFA
+
+```{r}
+
+cfa_model = '# Latent variables
+            AD_pathology      =~ ptau217_ab42_residual + ab_suvr + ab_pos_new + ptau181_residual
+            Neurodegeneration =~ nfl_residual + meta_roi_inv + hippcampul_residual_inv
+            Cognition         =~ zscore_interm_wms_mem_inv + zscore_interm_sevlt_inv + zscore_delay_wms_mem_inv + zscore_delay_svelt_inv + zscore_wms_digit_inv + zscore_trail_ab_inv + zscore_fas_inv + zscore_animal_naming_inv
+
+            # Covariances 
+            meta_roi_inv          ~~ hippcampul_residual_inv
+            zscore_interm_wms_mem_inv  ~~ zscore_delay_wms_mem_inv
+            zscore_interm_sevlt_inv   ~~ zscore_delay_svelt_inv
+            zscore_fas_inv  ~~  zscore_animal_naming_inv
+            ab_suvr   ~~ ab_pos_new'
+cfa_fit = cfa(cfa_model, data = sem_data_sdoh, missing = 'fiml')
+summary(cfa_fit, fit.measures = TRUE, standardized = TRUE)
+modificationindices(cfa_fit) %>% arrange(desc(mi))
+
+```
+
+### SEM
+
+```{r}
+
+
+sem_model = '# Latent variables
+            AD_pathology      =~ ptau181_residual + ptau217_ab42_residual + ab_suvr + ab_pos_new
+            Neurodegeneration =~ nfl_residual + meta_roi_inv + hippcampul_residual_inv
+            Cognition         =~ zscore_interm_wms_mem_inv + zscore_interm_sevlt_inv + zscore_delay_wms_mem_inv + zscore_delay_svelt_inv + zscore_wms_digit_inv + zscore_trail_ab_inv + zscore_fas_inv + zscore_animal_naming_inv
+
+            # Covariances 
+            meta_roi_inv          ~~ hippcampul_residual_inv
+            zscore_interm_wms_mem_inv  ~~ zscore_delay_wms_mem_inv
+            zscore_interm_sevlt_inv   ~~ zscore_delay_svelt_inv
+            zscore_fas_inv  ~~  zscore_animal_naming_inv
+            
+            ab_suvr       ~~ ab_pos_new
+            
+            AD_pathology ~~ Neurodegeneration 
+            Neurodegeneration ~~ Cognition
+            
+            # Regression
+            AD_pathology       ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + lang_Spanish + age_z + sex + PC1 + PC2 + PC3 + PC4
+            Neurodegeneration  ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + lang_Spanish + age_z + sex + PC1 + PC2 + PC3 + PC4
+            Cognition          ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + lang_Spanish + age_z + sex + PC1 + PC2 + PC3 + PC4'
+sem_fit = sem(sem_model, data = sem_data_sdoh, missing = 'fiml', fixed.x = TRUE)
+summary(sem_fit, fit.measures = TRUE, standardized = TRUE)
+modificationindices(sem_fit) %>% arrange(desc(mi))
+residuals(sem_fit, type = "standardized")
+
+
+sem_sex_model = '# Latent variables
+            AD_pathology      =~ ptau181_residual + ptau217_ab42_residual + ab_suvr + ab_pos_new
+            Neurodegeneration =~ nfl_residual + meta_roi_inv + hippcampul_residual_inv
+            Cognition         =~ zscore_interm_wms_mem_inv + zscore_interm_sevlt_inv + zscore_delay_wms_mem_inv + zscore_delay_svelt_inv + zscore_wms_digit_inv + zscore_trail_ab_inv + zscore_fas_inv + zscore_animal_naming_inv
+
+            # Covariances 
+            meta_roi_inv          ~~ hippcampul_residual_inv
+            zscore_interm_wms_mem_inv  ~~ zscore_delay_wms_mem_inv
+            zscore_interm_sevlt_inv   ~~ zscore_delay_svelt_inv
+            zscore_fas_inv  ~~  zscore_animal_naming_inv
+            
+            ab_suvr       ~~ ab_pos_new
+            
+            AD_pathology ~~ Neurodegeneration 
+            Neurodegeneration ~~ Cognition
+            
+            # Regression
+            AD_pathology       ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + lang_Spanish + age_z + PC1 + PC2 + PC3 + PC4
+            Neurodegeneration  ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + lang_Spanish + age_z + PC1 + PC2 + PC3 + PC4
+            Cognition          ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + lang_Spanish + age_z + PC1 + PC2 + PC3 + PC4'
+sem_sex_fit = sem(sem_sex_model, data = sem_data_sdoh, missing = 'fiml', group = "sex", fixed.x = TRUE)
+summary(sem_sex_fit, fit.measures = TRUE, standardized = TRUE)
+
+
+sem_race_model = '# Latent variables
+            AD_pathology      =~ ptau181_residual + ptau217_ab42_residual + ab_suvr + ab_pos_new
+            Neurodegeneration =~ nfl_residual + meta_roi_inv + hippcampul_residual_inv
+            Cognition         =~ zscore_interm_wms_mem_inv + zscore_interm_sevlt_inv + zscore_delay_wms_mem_inv + zscore_delay_svelt_inv + zscore_wms_digit_inv + zscore_trail_ab_inv + zscore_fas_inv + zscore_animal_naming_inv
+
+            # Covariances 
+            meta_roi_inv          ~~ hippcampul_residual_inv
+            zscore_interm_wms_mem_inv  ~~ zscore_delay_wms_mem_inv
+            zscore_interm_sevlt_inv   ~~ zscore_delay_svelt_inv
+            zscore_fas_inv  ~~  zscore_animal_naming_inv
+            
+            ab_suvr       ~~ ab_pos_new
+            
+            AD_pathology ~~ Neurodegeneration 
+            Neurodegeneration ~~ Cognition
+            
+            # Regression
+            AD_pathology       ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + age_z + sex
+            Neurodegeneration  ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + age_z + sex
+            Cognition          ~ prs_z_prscsx + cogd_sem + apoe4 + SDoH + age_z + sex'
+sem_race_fit = sem(sem_race_model, data = sem_data_sdoh, missing = 'fiml', group = "race", fixed.x = TRUE)
+summary(sem_race_fit, fit.measures = TRUE, standardized = TRUE)
+
+```
+
+
+### Distribution
+
+
+```{r}
+
+vars = c("prs_z_prscsx", "cogd_sem", "apoe4", "SDoH",
+          "lang_Spanish", "age_z", "sex", "PC1", "PC2", "PC3", "PC4")
+
+sem_complete = sem_data_sdoh[complete.cases(sem_data_sdoh[, vars]), ]
+lat_score = lavPredict(sem_fit) # extract latent scores
+sem_df = cbind(sem_complete[c("cdx_cog", "sex", "race")], lat_score, SDoH = sem_complete$SDoH)
+sem_df$cdx_cog = factor(sem_df$cdx_cog,
+                         levels = c(0, 1, 2),
+                         labels = c("Cognitively Normal", "MCI", "Dementia"))
+
+
+
+a = ggplot(sem_df, aes(x = AD_pathology, fill = cdx_cog)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Aβ/Tau (Latent Score)",
+      y = "Density",
+       fill = "Cognitive Diagnosis") +
+  scale_fill_manual(values = c("Dementia" = "#d62728",   
+                               "MCI" = "#2ca02c",      
+                               "Cognitively Normal" = "#1f77b4")) + 
+  theme(text = element_text(size = 8),
+        legend.position = "bottom") +
+  xlim(min(sem_df$AD_pathology, na.rm = TRUE) - 0.5,
+       max(sem_df$AD_pathology, na.rm = TRUE) + 0.5)
+
+
+b = ggplot(sem_df, aes(x = Neurodegeneration, fill = cdx_cog)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Neurodegeneration (Latent Score)", 
+       y = "Density",
+       fill = "Cognitive Diagnosis") +
+  scale_fill_manual(values = c("Dementia" = "#d62728",   
+                               "MCI" = "#2ca02c",      
+                               "Cognitively Normal" = "#1f77b4")) + 
+  theme(text = element_text(size = 8),
+        legend.position = "none") +
+  xlim(min(sem_df$Neurodegeneration, na.rm = TRUE) - 0.5,
+       max(sem_df$Neurodegeneration, na.rm = TRUE) + 0.5)
+
+
+c = ggplot(sem_df, aes(x = Cognition, fill = cdx_cog)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Cognition (Latent Score)", 
+       y = "Density",
+       fill = "Cognitive Diagnosis") +
+  scale_fill_manual(values = c("Dementia" = "#d62728",   
+                               "MCI" = "#2ca02c",      
+                               "Cognitively Normal" = "#1f77b4")) + 
+  theme(text = element_text(size = 8),
+        legend.position = "none") + 
+  xlim(min(sem_df$Cognition, na.rm = TRUE) - 0.5,
+       max(sem_df$Cognition, na.rm = TRUE) + 0.5)
+
+
+d = ggplot(sem_df, aes(x = SDoH, fill = cdx_cog)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "SDoH (Latent Score)", 
+       y = "Density",
+       fill = "Cognitive Diagnosis") +
+  scale_fill_manual(values = c("Dementia" = "#d62728",   
+                               "MCI" = "#2ca02c",      
+                               "Cognitively Normal" = "#1f77b4")) + 
+  theme(text = element_text(size = 8),
+        legend.position = "none") +
+  xlim(min(sem_df$SDoH, na.rm = TRUE) + 0.5,
+       max(sem_df$SDoH, na.rm = TRUE) + 0.3)
+
+legend = get_legend(a)
+a = a + theme(legend.position = "none")
+
+
+
+pageCreate(width = 8, height = 8.5, default.units = "inches") 
+
+plotGG(
+  plot = a,
+  x = 0, y = 0, width = 4, height = 4,       
+  just = c("left", "top"), default.units = "inches"
+  )
+
+plotGG(
+  plot = b,
+  x = 4, y = 0, width = 4, height = 4,       
+  just = c("left", "top"), default.units = "inches"
+  )
+
+plotGG(
+ plot = c,
+  x = 0, y = 4, width = 4, height = 4,        
+  just = c("left", "top"), default.units = "inches"
+  )
+
+plotGG(
+ plot = d,
+  x = 4, y = 4, width = 4, height = 4,        
+  just = c("left", "top"), default.units = "inches"
+  )
+
+plotGG(
+  plot = legend,
+  x = 2, y = 8, width = 4, height = 0.5,
+  just = c("left", "top"),
+  default.units = "inches"
+)
+
+pageGuideHide()
+
+dev.off()
+
+
+# Do distributions of one group statistically vary from another?)
+
+# distribution between two groups
+vars = c("AD_pathology", "Neurodegeneration", "Cognition", "SDoH")
+
+ks_by_group = function(g1, g2) {
+  sapply(vars, function(v) {
+    ks.test(
+      sem_df[[v]][sem_df$cdx_cog == g1],
+      sem_df[[v]][sem_df$cdx_cog == g2]
+    )$p.value
+  })
+}
+
+# Dementia vs Cognitively Normal
+ks_by_group("Dementia", "Cognitively Normal")
+# Cognitively Normal vs MCI
+ks_by_group("Cognitively Normal", "MCI")
+
+```
+
+```{r}
+# sex-stratified
+sem_df$sex = factor(sem_df$sex,
+                         levels = c(0, 1),
+                         labels = c("Male", "Female"))
+
+
+
+a = ggplot(sem_df, aes(x = AD_pathology, fill = sex)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Aβ/Tau (Latent Score)",
+      y = "Density",
+       fill = "Cognitive Diagnosis") +
+  scale_fill_manual(values = c("Female" = "#d62728",       
+                               "Male" = "#1f77b4")) + 
+  theme(text = element_text(size = 8),
+        legend.position = "bottom") +
+  xlim(min(sem_df$AD_pathology, na.rm = TRUE) - 0.5,
+       max(sem_df$AD_pathology, na.rm = TRUE) + 0.5)
+
+
+b = ggplot(sem_df, aes(x = Neurodegeneration, fill = sex)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Neurodegeneration (Latent Score)", 
+       y = "Density",
+       fill = "Cognitive Diagnosis") +
+  scale_fill_manual(values = c("Female" = "#d62728",       
+                               "Male" = "#1f77b4")) + 
+  theme(text = element_text(size = 8),
+        legend.position = "none") +
+  xlim(min(sem_df$Neurodegeneration, na.rm = TRUE) - 0.5,
+       max(sem_df$Neurodegeneration, na.rm = TRUE) + 0.5)
+
+
+c = ggplot(sem_df, aes(x = Cognition, fill = sex)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Cognition (Latent Score)", 
+       y = "Density",
+       fill = "Cognitive Diagnosis") +
+  scale_fill_manual(values = c("Female" = "#d62728",       
+                               "Male" = "#1f77b4")) + 
+  theme(text = element_text(size = 8),
+        legend.position = "none") + 
+  xlim(min(sem_df$Cognition, na.rm = TRUE) - 0.5,
+       max(sem_df$Cognition, na.rm = TRUE) + 0.5)
+
+
+d = ggplot(sem_df, aes(x = SDoH, fill = sex)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "SDoH (Latent Score)", 
+       y = "Density",
+       fill = "Cognitive Diagnosis") +
+  scale_fill_manual(values = c("Female" = "#d62728",       
+                               "Male" = "#1f77b4")) + 
+  theme(text = element_text(size = 8),
+        legend.position = "none") +
+  xlim(min(sem_df$SDoH, na.rm = TRUE) + 0.5,
+       max(sem_df$SDoH, na.rm = TRUE) + 0.3)
+
+legend = get_legend(a)
+a = a + theme(legend.position = "none")
+
+
+
+pageCreate(width = 8, height = 8.5, default.units = "inches") 
+
+plotGG(
+  plot = a,
+  x = 0, y = 0, width = 4, height = 4,       
+  just = c("left", "top"), default.units = "inches"
+  )
+
+plotGG(
+  plot = b,
+  x = 4, y = 0, width = 4, height = 4,       
+  just = c("left", "top"), default.units = "inches"
+  )
+
+plotGG(
+ plot = c,
+  x = 0, y = 4, width = 4, height = 4,        
+  just = c("left", "top"), default.units = "inches"
+  )
+
+plotGG(
+ plot = d,
+  x = 4, y = 4, width = 4, height = 4,        
+  just = c("left", "top"), default.units = "inches"
+  )
+
+plotGG(
+  plot = legend,
+  x = 2, y = 8, width = 4, height = 0.5,
+  just = c("left", "top"),
+  default.units = "inches"
+)
+
+pageGuideHide()
+
+dev.off()
+
+# KS test
+vars = c("AD_pathology", "Neurodegeneration", "Cognition", "SDoH")
+
+ks_by_sex = sapply(vars, function(v) {
+  ks.test(
+    sem_df[[v]][sem_df$sex == "Male"],
+    sem_df[[v]][sem_df$sex == "Female"]
+  )$p.value
+})
+
+ks_by_sex
+```
+
+```{r}
+# race stratified
+
+levels(sem_df$race)[levels(sem_df$race) == "Hispanic"] = "Latinx/Hispanic"
+
+
+a = ggplot(sem_df, aes(x = AD_pathology, fill = race)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Aβ/Tau (Latent Score)",
+      y = "Density",
+       fill = "Cognitive Diagnosis") +
+  scale_fill_manual(values = c("NHW" = "#d62728",   
+                               "Black" = "#2ca02c",      
+                               "Latinx/Hispanic" = "#1f77b4")) + 
+  theme(text = element_text(size = 8),
+        legend.position = "bottom") +
+  xlim(min(sem_df$AD_pathology, na.rm = TRUE) - 0.5,
+       max(sem_df$AD_pathology, na.rm = TRUE) + 0.5)
+
+
+b = ggplot(sem_df, aes(x = Neurodegeneration, fill = race)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Neurodegeneration (Latent Score)", 
+       y = "Density",
+       fill = "Cognitive Diagnosis") +
+  scale_fill_manual(values = c("NHW" = "#d62728",   
+                               "Black" = "#2ca02c",      
+                               "Latinx/Hispanic" = "#1f77b4")) + 
+  theme(text = element_text(size = 8),
+        legend.position = "none") +
+  xlim(min(sem_df$Neurodegeneration, na.rm = TRUE) - 0.5,
+       max(sem_df$Neurodegeneration, na.rm = TRUE) + 0.5)
+
+
+c = ggplot(sem_df, aes(x = Cognition, fill = race)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Cognition (Latent Score)", 
+       y = "Density",
+       fill = "Cognitive Diagnosis") +
+  scale_fill_manual(values = c("NHW" = "#d62728",   
+                               "Black" = "#2ca02c",      
+                               "Latinx/Hispanic" = "#1f77b4")) + 
+  theme(text = element_text(size = 8),
+        legend.position = "none") + 
+  xlim(min(sem_df$Cognition, na.rm = TRUE) - 0.5,
+       max(sem_df$Cognition, na.rm = TRUE) + 0.5)
+
+
+d = ggplot(sem_df, aes(x = SDoH, fill = race)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "SDoH (Latent Score)", 
+       y = "Density",
+       fill = "Cognitive Diagnosis") +
+  scale_fill_manual(values = c("NHW" = "#d62728",   
+                               "Black" = "#2ca02c",      
+                               "Latinx/Hispanic" = "#1f77b4")) + 
+  theme(text = element_text(size = 8),
+        legend.position = "none") +
+  xlim(min(sem_df$SDoH, na.rm = TRUE) + 0.5,
+       max(sem_df$SDoH, na.rm = TRUE) + 0.3)
+
+legend = get_legend(a)
+a = a + theme(legend.position = "none")
+
+
+
+pageCreate(width = 8, height = 8.5, default.units = "inches") 
+
+plotGG(
+  plot = a,
+  x = 0, y = 0, width = 4, height = 4,       
+  just = c("left", "top"), default.units = "inches"
+  )
+
+plotGG(
+  plot = b,
+  x = 4, y = 0, width = 4, height = 4,       
+  just = c("left", "top"), default.units = "inches"
+  )
+
+plotGG(
+ plot = c,
+  x = 0, y = 4, width = 4, height = 4,        
+  just = c("left", "top"), default.units = "inches"
+  )
+
+plotGG(
+ plot = d,
+  x = 4, y = 4, width = 4, height = 4,        
+  just = c("left", "top"), default.units = "inches"
+  )
+
+plotGG(
+  plot = legend,
+  x = 2, y = 8, width = 4, height = 0.5,
+  just = c("left", "top"),
+  default.units = "inches"
+)
+
+pageGuideHide()
+
+dev.off()
+
+
+
+# distribution between two groups
+vars = c("AD_pathology", "Neurodegeneration", "Cognition", "SDoH")
+
+ks_by_group = function(g1, g2) {
+  sapply(vars, function(v) {
+    ks.test(
+      sem_df[[v]][sem_df$race == g1],
+      sem_df[[v]][sem_df$race == g2]
+    )$p.value
+  })
+}
+
+# Dementia vs Cognitively Normal
+ks_by_group("NHW", "Black")
+# Cognitively Normal vs MCI
+ks_by_group("Black", "Latinx/Hispanic")
+
+
+```
+
+
+### Demographics
+
+```{r}
+sem_sdoh_copy = sem_data_sdoh
+sem_sdoh_copy$id_education = data$id_education
+vars = c("prs_z_prscsx", "cogd_sem", "apoe4", "SDoH",
+          "lang_Spanish", "age_z", "sex", "PC1", "PC2", "PC3", "PC4")
+sem_complete = sem_sdoh_copy[complete.cases(sem_sdoh_copy[, vars]), ]
+
+
+summary_df = sem_complete %>%
+  filter(!is.na(cdx_cog)) %>%
+  mutate(
+    cdx_cog = factor(
+      cdx_cog,
+      levels = c(0, 1, 2),
+      labels = c("Cognitively Normal", "Mild cognitive impairment", "Dementia"))) %>%
+  group_by(cdx_cog) %>%
+  summarise(
+    Total = n(),
+
+    Age = sprintf("%.1f (± %.1f)", mean(age, na.rm = TRUE), sd(age, na.rm = TRUE)),
+    Female = sprintf("%d (%.1f%%)", sum(sex == 1, na.rm = TRUE), 100 * mean(sex == 1, na.rm = TRUE)),
+    `NHW` = sprintf("%d (%.1f%%)", sum(race == "NHW", na.rm = TRUE), 100 * mean(race == "NHW", na.rm = TRUE)),
+    `Latinx` = sprintf("%d (%.1f%%)", sum(race == "Hispanic", na.rm = TRUE), 100 * mean(race == "Hispanic", na.rm = TRUE)),
+    `Black` = sprintf("%d (%.1f%%)", sum(race == "Black", na.rm = TRUE), 100 * mean(race == "Black", na.rm = TRUE)),
+    Education = sprintf("%.1f (± %.1f)", mean(id_education, na.rm = TRUE), sd(id_education, na.rm = TRUE)),
+
+    `APOEε4 Carrier`    = sprintf("%d (%.1f%%)", sum(apoe4 == 1, na.rm = TRUE), 100 * mean(apoe4 == 1, na.rm = TRUE)),
+    
+    CogDRisk = sprintf("%.3f (± %.2f)", mean(cogd, na.rm = TRUE), sd(cogd, na.rm = TRUE)),
+    PRSCSx = sprintf("%.3f (± %.2f)", mean(prs_z_prscsx, na.rm = TRUE), sd(prs_z_prscsx, na.rm = TRUE)),
+    `Adverse SDoH Latent Score` = sprintf("%.3f (± %.2f)", mean(SDoH, na.rm = TRUE), sd(SDoH, na.rm = TRUE)),
+    `Healthcare and Economic Adversity Latent Score` = sprintf("%.3f (± %.2f)", mean(HEA, na.rm = TRUE), sd(HEA, na.rm = TRUE)),
+    `Anxiety Latent Score` = sprintf("%.3f (± %.2f)", mean(AX, na.rm = TRUE), sd(AX, na.rm = TRUE)),
+    `Social Adversity Latent Score` = sprintf("%.3f (± %.2f)", mean(SA, na.rm = TRUE), sd(SA, na.rm = TRUE)),
+    
+    `SEVLT Immediate` = sprintf("%.3f (± %.2f)", mean(zscore_interm_sevlt, na.rm = TRUE), sd(zscore_interm_sevlt, na.rm = TRUE)),
+    `SEVLT Delayed` = sprintf("%.3f (± %.2f)", mean(zscore_delay_svelt, na.rm = TRUE), sd(zscore_delay_svelt, na.rm = TRUE)),
+    `WMS-III Logical Memory I` = sprintf("%.3f (± %.2f)", mean(zscore_interm_wms_mem, na.rm = TRUE), sd(zscore_interm_wms_mem, na.rm = TRUE)),
+    `WMS-III Logical Memory II` = sprintf("%.3f (± %.2f)", mean(zscore_delay_wms_mem, na.rm = TRUE), sd(zscore_delay_wms_mem, na.rm = TRUE)),
+    `WMS-III Digit Span` = sprintf("%.3f (± %.2f)", mean(zscore_wms_digit, na.rm = TRUE), sd(zscore_wms_digit, na.rm = TRUE)),
+    `Trail Making Test A&B` = sprintf("%.3f (± %.2f)", mean(zscore_trail_ab, na.rm = TRUE), sd(zscore_trail_ab, na.rm = TRUE)),
+    `FAS` = sprintf("%.3f (± %.2f)", mean(zscore_fas, na.rm = TRUE), sd(zscore_fas, na.rm = TRUE)),
+    `Animal Making` = sprintf("%.3f (± %.2f)", mean(zscore_animal_naming, na.rm = TRUE), sd(zscore_animal_naming, na.rm = TRUE)),
+    
+    `Cortical \nThickness` = sprintf("%.2f (± %.2f)", mean(meta_roi, na.rm = TRUE), sd(meta_roi, na.rm = TRUE)),
+    `Hippo. \nVolume` = sprintf("%.2f (± %.2f)", mean(z_hippcampul_vol, na.rm = TRUE), sd(z_hippcampul_vol, na.rm = TRUE)),
+    
+    `Amyloid PET Positivity` = sprintf("%.2f (± %.2f)", mean(ab_pos_new, na.rm = TRUE), sd(ab_pos_new, na.rm = TRUE)),
+    `Amyloid PET Global SUVR` = sprintf("%.2f (± %.2f)", mean(ab_suvr, na.rm = TRUE), sd(ab_suvr, na.rm = TRUE)),
+
+    `pTau181` = sprintf("%.3f (± %.2f)", mean(ptau181, na.rm = TRUE), sd(ptau181, na.rm = TRUE)),
+    `pTau217/Aβ42` = sprintf("%.2f (± %.2f)", mean(ptau217_ab42, na.rm = TRUE), sd(ptau217_ab42, na.rm = TRUE)),
+    NfL  = sprintf("%.3f (± %.2f)", mean(nfl, na.rm = TRUE), sd(nfl, na.rm = TRUE))
+    
+  ) %>%
+  tibble::column_to_rownames("cdx_cog") %>%
+  t() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("Variable")
+
+# write_xlsx(summary_df, "/wynton/group/andrews/users/mokorie/HABSHD/results/plots/SEM/table1.xlsx")
+
+
+table_data = sem_data_sdoh
+table_data$id_education = data$id_education
+
+# total cohort
+
+total_summary = table_data %>%
+  summarise(
+    Total = n(),
+
+    Age = sprintf("%.1f (± %.1f)", mean(age, na.rm = TRUE), sd(age, na.rm = TRUE)),
+    Female = sprintf("%d (%.1f%%)", sum(sex == 1, na.rm = TRUE), 100 * mean(sex == 1, na.rm = TRUE)),
+    `NHW` = sprintf("%d (%.1f%%)", sum(race == "NHW", na.rm = TRUE), 100 * mean(race == "NHW", na.rm = TRUE)),
+    `Latinx` = sprintf("%d (%.1f%%)", sum(race == "Hispanic", na.rm = TRUE), 100 * mean(race == "Hispanic", na.rm = TRUE)),
+    `Black` = sprintf("%d (%.1f%%)", sum(race == "Black", na.rm = TRUE), 100 * mean(race == "Black", na.rm = TRUE)),
+    Education = sprintf("%.1f (± %.1f)", mean(id_education, na.rm = TRUE), sd(id_education, na.rm = TRUE)),
+
+    `ε4 Carrier`    = sprintf("%d (%.1f%%)", sum(apoe4 == 1, na.rm = TRUE), 100 * mean(apoe4 == 1, na.rm = TRUE)),
+    
+    CogDRisk = sprintf("%.3f (± %.2f)", mean(cogd, na.rm = TRUE), sd(cogd, na.rm = TRUE)),
+    PRSCSx = sprintf("%.3f (± %.2f)", mean(prs_z_prscsx, na.rm = TRUE), sd(prs_z_prscsx, na.rm = TRUE)),
+    SDoH = sprintf("%.3f (± %.2f)", mean(SDoH, na.rm = TRUE), sd(SDoH, na.rm = TRUE)),
+    HEA = sprintf("%.3f (± %.2f)", mean(HEA, na.rm = TRUE), sd(HEA, na.rm = TRUE)),
+    AX = sprintf("%.3f (± %.2f)", mean(AX, na.rm = TRUE), sd(AX, na.rm = TRUE)),
+    SA = sprintf("%.3f (± %.2f)", mean(SA, na.rm = TRUE), sd(SA, na.rm = TRUE)),
+    
+    `SEVLT Immediate` = sprintf("%.3f (± %.2f)", mean(zscore_interm_sevlt, na.rm = TRUE), sd(zscore_interm_sevlt, na.rm = TRUE)),
+    `SEVLT Delayed` = sprintf("%.3f (± %.2f)", mean(zscore_delay_svelt, na.rm = TRUE), sd(zscore_delay_svelt, na.rm = TRUE)),
+    `WMS-III Logical Memory I` = sprintf("%.3f (± %.2f)", mean(zscore_interm_wms_mem, na.rm = TRUE), sd(zscore_interm_wms_mem, na.rm = TRUE)),
+    `WMS-III Logical Memory II` = sprintf("%.3f (± %.2f)", mean(zscore_delay_wms_mem, na.rm = TRUE), sd(zscore_delay_wms_mem, na.rm = TRUE)),
+    `WMS-III Digit Span` = sprintf("%.3f (± %.2f)", mean(zscore_wms_digit, na.rm = TRUE), sd(zscore_wms_digit, na.rm = TRUE)),
+    `Trail Making Test A&B` = sprintf("%.3f (± %.2f)", mean(zscore_trail_ab, na.rm = TRUE), sd(zscore_trail_ab, na.rm = TRUE)),
+    `FAS` = sprintf("%.3f (± %.2f)", mean(zscore_fas, na.rm = TRUE), sd(zscore_fas, na.rm = TRUE)),
+    `Animal Making` = sprintf("%.3f (± %.2f)", mean(zscore_animal_naming, na.rm = TRUE), sd(zscore_animal_naming, na.rm = TRUE)),
+    
+    `Cortical \nThickness` = sprintf("%.2f (± %.2f)", mean(meta_roi, na.rm = TRUE), sd(meta_roi, na.rm = TRUE)),
+    `Hippo. \nVolume` = sprintf("%.2f (± %.2f)", mean(z_hippcampul_vol, na.rm = TRUE), sd(z_hippcampul_vol, na.rm = TRUE)),
+    
+    `Amyloid PET Positivity` = sprintf("%.2f (± %.2f)", mean(ab_pos_new, na.rm = TRUE), sd(ab_pos_new, na.rm = TRUE)),
+    `Amyloid PET Global SUVR` = sprintf("%.2f (± %.2f)", mean(ab_suvr, na.rm = TRUE), sd(ab_suvr, na.rm = TRUE)),
+
+    `pTau181` = sprintf("%.3f (± %.2f)", mean(ptau181, na.rm = TRUE), sd(ptau181, na.rm = TRUE)),
+    `pTau217/Aβ42` = sprintf("%.2f (± %.2f)", mean(ptau217_ab42, na.rm = TRUE), sd(ptau217_ab42, na.rm = TRUE)),
+    NfL  = sprintf("%.3f (± %.2f)", mean(nfl, na.rm = TRUE), sd(nfl, na.rm = TRUE))
+    
+  ) %>%
+  t() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("Variable")
+
+
+# Table for SEM FILM applied to predictors
+vars_complete = c("prs_z_prscsx", "cogd_sem", "apoe4", "SDoH", "lang_Spanish", "age_z", "sex", "PC1", "PC2", "PC3", "PC4")
+sem_data_complete = table_data %>%
+  dplyr::filter(if_all(all_of(vars_complete), ~ !is.na(.)))
+
+complete_summary = sem_data_complete %>%
+  summarise(
+    Total = n(),
+
+    Age = sprintf("%.1f (± %.1f)", mean(age, na.rm = TRUE), sd(age, na.rm = TRUE)),
+    Female = sprintf("%d (%.1f%%)", sum(sex == 1, na.rm = TRUE), 100 * mean(sex == 1, na.rm = TRUE)),
+    `NHW` = sprintf("%d (%.1f%%)", sum(race == "NHW", na.rm = TRUE), 100 * mean(race == "NHW", na.rm = TRUE)),
+    `Latinx` = sprintf("%d (%.1f%%)", sum(race == "Hispanic", na.rm = TRUE), 100 * mean(race == "Hispanic", na.rm = TRUE)),
+    `Black` = sprintf("%d (%.1f%%)", sum(race == "Black", na.rm = TRUE), 100 * mean(race == "Black", na.rm = TRUE)),
+    Education = sprintf("%.1f (± %.1f)", mean(id_education, na.rm = TRUE), sd(id_education, na.rm = TRUE)),
+
+    `ε4 Carrier` = sprintf("%d (%.1f%%)", sum(apoe4 == 1, na.rm = TRUE), 100 * mean(apoe4 == 1, na.rm = TRUE)),
+
+    CogDRisk = sprintf("%.3f (± %.2f)", mean(cogd, na.rm = TRUE), sd(cogd, na.rm = TRUE)),
+    PRSCSx = sprintf("%.3f (± %.2f)", mean(prs_z_prscsx, na.rm = TRUE), sd(prs_z_prscsx, na.rm = TRUE)),
+    SDoH = sprintf("%.3f (± %.2f)", mean(SDoH, na.rm = TRUE), sd(SDoH, na.rm = TRUE)),
+    HEA = sprintf("%.3f (± %.2f)", mean(HEA, na.rm = TRUE), sd(HEA, na.rm = TRUE)),
+    AX = sprintf("%.3f (± %.2f)", mean(AX, na.rm = TRUE), sd(AX, na.rm = TRUE)),
+    SA = sprintf("%.3f (± %.2f)", mean(SA, na.rm = TRUE), sd(SA, na.rm = TRUE)),
+
+    `SEVLT Immediate` = sprintf("%.3f (± %.2f)", mean(zscore_interm_sevlt, na.rm = TRUE), sd(zscore_interm_sevlt, na.rm = TRUE)),
+    `SEVLT Delayed` = sprintf("%.3f (± %.2f)", mean(zscore_delay_svelt, na.rm = TRUE), sd(zscore_delay_svelt, na.rm = TRUE)),
+    `WMS-III Logical Memory I` = sprintf("%.3f (± %.2f)", mean(zscore_interm_wms_mem, na.rm = TRUE), sd(zscore_interm_wms_mem, na.rm = TRUE)),
+    `WMS-III Logical Memory II` = sprintf("%.3f (± %.2f)", mean(zscore_delay_wms_mem, na.rm = TRUE), sd(zscore_delay_wms_mem, na.rm = TRUE)),
+    `WMS-III Digit Span` = sprintf("%.3f (± %.2f)", mean(zscore_wms_digit, na.rm = TRUE), sd(zscore_wms_digit, na.rm = TRUE)),
+    `Trail Making Test A&B` = sprintf("%.3f (± %.2f)", mean(zscore_trail_ab, na.rm = TRUE), sd(zscore_trail_ab, na.rm = TRUE)),
+    `FAS` = sprintf("%.3f (± %.2f)", mean(zscore_fas, na.rm = TRUE), sd(zscore_fas, na.rm = TRUE)),
+    `Animal Making` = sprintf("%.3f (± %.2f)", mean(zscore_animal_naming, na.rm = TRUE), sd(zscore_animal_naming, na.rm = TRUE)),
+
+    `Cortical \nThickness` = sprintf("%.2f (± %.2f)", mean(meta_roi, na.rm = TRUE), sd(meta_roi, na.rm = TRUE)),
+    `Hippo. \nVolume` = sprintf("%.2f (± %.2f)", mean(z_hippcampul_vol, na.rm = TRUE), sd(z_hippcampul_vol, na.rm = TRUE)),
+
+    `Amyloid PET Positivity` = sprintf("%.2f (± %.2f)", mean(ab_pos_new, na.rm = TRUE), sd(ab_pos_new, na.rm = TRUE)),
+    `Amyloid PET Global SUVR` = sprintf("%.2f (± %.2f)", mean(ab_suvr, na.rm = TRUE), sd(ab_suvr, na.rm = TRUE)),
+
+    `pTau181` = sprintf("%.3f (± %.2f)", mean(ptau181, na.rm = TRUE), sd(ptau181, na.rm = TRUE)),
+    `pTau217/Aβ42` = sprintf("%.2f (± %.2f)", mean(ptau217_ab42, na.rm = TRUE), sd(ptau217_ab42, na.rm = TRUE)),
+    NfL = sprintf("%.3f (± %.2f)", mean(nfl, na.rm = TRUE), sd(nfl, na.rm = TRUE))
+  ) %>%
+  t() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("Variable")
+
+table_total = total_summary %>%
+  dplyr::rename(`Total Cohort` = V1)
+table_complete = complete_summary %>%
+  dplyr::rename(`Complete Cases` = V1)
+
+combined_table = table_total %>%
+  dplyr::left_join(table_complete, by = "Variable")
+
+# write_xlsx(combined_table, "/wynton/group/andrews/users/mokorie/HABSHD/results/plots/SEM/supp_table1.xlsx")
+```
+
+
+### Tables
+
+```{r}
+
+sem21_fit1 = sem(sem21_model, data = sem_data_sdoh, missing = 'fiml', fixed.x = TRUE)
+sem21_fit2 = sem(sem21_model, data = sem_data_sdoh, missing = 'fiml', fixed.x = FALSE)
+sem22_fit1 = sem(sem22_model, data = sem_data_sdoh, missing = 'fiml', group = "sex", fixed.x = TRUE)
+sem22_fit2 = sem(sem22_model, data = sem_data_sdoh, missing = 'fiml', group = "sex", fixed.x = FALSE)
+sem23_fit1 = sem(sem23_model, data = sem_data_sdoh, missing = 'fiml', group = "race", fixed.x = TRUE)
+sem23_fit2 = sem(sem23_model, data = sem_data_sdoh, missing = 'fiml', group = "race", fixed.x = FALSE)
+ 
+export_lavaan_results(sem21_fit1, "/wynton/group/andrews/users/mokorie/HABSHD/results/plots/SEM/fullSEM_latentonlyFIML.txt", NULL)
+export_lavaan_results(sem21_fit2, "/wynton/group/andrews/users/mokorie/HABSHD/results/plots/SEM/fullSEM_allFIML.txt", NULL)
+export_lavaan_results(sem22_fit1, "/wynton/group/andrews/users/mokorie/HABSHD/results/plots/SEM/fullSEM_latentonlyFIML_sexstrat.txt", NULL)
+export_lavaan_results(sem22_fit2, "/wynton/group/andrews/users/mokorie/HABSHD/results/plots/SEM/fullSEM_allFIML_sexstrat.txt", NULL)
+export_lavaan_results(sem23_fit1, "/wynton/group/andrews/users/mokorie/HABSHD/results/plots/SEM/fullSEM_latentonlyFIML_racestrat.txt", NULL)
+export_lavaan_results(sem23_fit2, "/wynton/group/andrews/users/mokorie/HABSHD/results/plots/SEM/fullSEM_allFIML_racestrat.txt", NULL)
+export_lavaan_results(cfa11_fit, "/wynton/group/andrews/users/mokorie/HABSHD/results/plots/SEM/adpath_cfa.txt", NULL)
+export_lavaan_results(sdoh_fin_fit, "/wynton/group/andrews/users/mokorie/HABSHD/results/plots/SEM/finalsdoh.txt", NULL)
+
+
+```
+
+
+```{r}
+# Extract model fit for one lavaan object
+fit_row = function(fit, model_name) {
+  fm = fitMeasures(fit, c("chisq", "df", "tli", "cfi", "rmsea", "srmr"))
+  tibble(
+    Model = model_name,
+    X2    = unname(fm["chisq"]),
+    df    = unname(fm["df"]),
+    TLI   = unname(fm["tli"]),
+    CFI   = unname(fm["cfi"]),
+    RMSEA = unname(fm["rmsea"]),
+    SRMR  = unname(fm["srmr"])
+  )
+}
+
+# Add LRT stats to the second row of a two-model comparison
+add_lrt = function(tbl, fit_free, fit_equal) {
+  lrt = lavTestLRT(fit_free, fit_equal)
+
+  tbl %>%
+    mutate(
+      Delta_X2 = c(NA, unname(lrt[2, "Chisq diff"])),
+      Delta_df = c(NA, unname(lrt[2, "Df diff"])),
+      p_LRT    = c(NA, unname(lrt[2, "Pr(>Chisq)"]))
+    )
+}
+
+# Pretty rounding
+pretty_tbl = function(x) {
+  x %>%
+    mutate(across(where(is.numeric), ~ round(.x, 3)))
+}
+
+
+sex_tbl = bind_rows(
+  fit_row(fit_sex_free,  "Free structural paths"),
+  fit_row(fit_sex_equal, "Equal structural paths")
+) %>%
+  add_lrt(fit_sex_free, fit_sex_equal) %>%
+  pretty_tbl()
+
+
+race_tbl = bind_rows(
+  fit_row(fit_race_free,  "Free structural paths"),
+  fit_row(fit_race_equal, "Equal structural paths")
+) %>%
+  add_lrt(fit_race_free, fit_race_equal) %>%
+  pretty_tbl()
+
+
+race_pred_tbl = bind_rows(
+  fit_row(fit_prs,  "PRS freed"),
+  fit_row(fit_apoe, "APOE freed"),
+  fit_row(fit_cog,  "CogD freed"),
+  fit_row(fit_sdoh, "SDoH freed")
+) %>%
+  mutate(
+    Delta_X2 = c(
+      unname(lavTestLRT(fit_race_equal, fit_prs)[2, "Chisq diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe)[2, "Chisq diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_cog)[2, "Chisq diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_sdoh)[2, "Chisq diff"])
+    ),
+    Delta_df = c(
+      unname(lavTestLRT(fit_race_equal, fit_prs)[2, "Df diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe)[2, "Df diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_cog)[2, "Df diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_sdoh)[2, "Df diff"])
+    ),
+    p_LRT = c(
+      unname(lavTestLRT(fit_race_equal, fit_prs)[2, "Pr(>Chisq)"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe)[2, "Pr(>Chisq)"]),
+      unname(lavTestLRT(fit_race_equal, fit_cog)[2, "Pr(>Chisq)"]),
+      unname(lavTestLRT(fit_race_equal, fit_sdoh)[2, "Pr(>Chisq)"])
+    )
+  ) %>%
+  pretty_tbl()
+
+
+apoe_outcome_tbl = bind_rows(
+  fit_row(fit_apoe_AD,    "APOE ~ Aβ/tau"),
+  fit_row(fit_apoe_neuro, "APOE ~ Neurodegeneration"),
+  fit_row(fit_apoe_cog,   "APOE ~ Cognition")
+) %>%
+  mutate(
+    Delta_X2 = c(
+      unname(lavTestLRT(fit_race_equal, fit_apoe_AD)[2, "Chisq diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe_neuro)[2, "Chisq diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe_cog)[2, "Chisq diff"])
+    ),
+    Delta_df = c(
+      unname(lavTestLRT(fit_race_equal, fit_apoe_AD)[2, "Df diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe_neuro)[2, "Df diff"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe_cog)[2, "Df diff"])
+    ),
+    p_LRT = c(
+      unname(lavTestLRT(fit_race_equal, fit_apoe_AD)[2, "Pr(>Chisq)"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe_neuro)[2, "Pr(>Chisq)"]),
+      unname(lavTestLRT(fit_race_equal, fit_apoe_cog)[2, "Pr(>Chisq)"])
+    )
+  ) %>%
+  pretty_tbl()
+
+
+pairwise_results_tbl = pairwise_results %>%
+  select(-p_value) %>%
+  pretty_tbl() %>%
+  dplyr::rename(
+    Comparison = comparison,
+    `ΔX2` = chisq_diff,
+    `Δdf` = df_diff,
+    `β2` = beta_g1,
+    `β1` = beta_g2,
+    `P-Value adj.` = p_adj)
+
+
+sex_tbl2 = sex_tbl %>% mutate(Analysis = "Sex: Overall")
+race_tbl2 = race_tbl %>% mutate(Analysis = "Race: Overall")
+race_pred_tbl2 = race_pred_tbl %>% mutate(Analysis = "Race: Regression coefficients")
+apoe_outcome_tbl2 = apoe_outcome_tbl %>% mutate(Analysis = "Race: APOE")
+
+all_tbl = bind_rows(
+  sex_tbl2,
+  race_tbl2,
+  race_pred_tbl2,
+  apoe_outcome_tbl2
+) %>%
+  select(Analysis, everything()) 
+
+all_tbl = all_tbl %>%
+  dplyr::rename(
+    Analysis = Analysis,
+    Model = Model,
+    X2 = X2,
+    df = df,
+    TLI = TLI,
+    CFI = CFI,
+    RMSEA = RMSEA,
+    SRMR = SRMR,
+    `ΔX2` = `Delta_X2`,
+    `Δdf` = `Delta_df`,
+    `P-value adj.` = p_LRT
+  )
+
+
+write_xlsx(pairwise_results_tbl, "/wynton/group/andrews/users/mokorie/HABSHD/results/plots/SEM/table3.xlsx")
+write_xlsx(all_tbl, "/wynton/group/andrews/users/mokorie/HABSHD/results/plots/SEM/table2.xlsx")
+
+```

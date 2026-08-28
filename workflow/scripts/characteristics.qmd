@@ -1,0 +1,120 @@
+---
+title: "characteristics"
+format: html
+editor: visual
+---
+
+### Demographics
+
+```{r}
+
+table_data = sem_data_sdoh
+table_data$id_education = data$id_education
+
+# total cohort
+
+total_summary = table_data %>%
+  summarise(
+    Total = n(),
+
+    Age = sprintf("%.1f (± %.1f)", mean(age, na.rm = TRUE), sd(age, na.rm = TRUE)),
+    Female = sprintf("%d (%.1f%%)", sum(sex == 1, na.rm = TRUE), 100 * mean(sex == 1, na.rm = TRUE)),
+    `NHW` = sprintf("%d (%.1f%%)", sum(race == "NHW", na.rm = TRUE), 100 * mean(race == "NHW", na.rm = TRUE)),
+    `Latinx` = sprintf("%d (%.1f%%)", sum(race == "Hispanic", na.rm = TRUE), 100 * mean(race == "Hispanic", na.rm = TRUE)),
+    `Black` = sprintf("%d (%.1f%%)", sum(race == "Black", na.rm = TRUE), 100 * mean(race == "Black", na.rm = TRUE)),
+    Education = sprintf("%.1f (± %.1f)", mean(id_education, na.rm = TRUE), sd(id_education, na.rm = TRUE)),
+
+    `ε4 Carrier`    = sprintf("%d (%.1f%%)", sum(apoe4 == 1, na.rm = TRUE), 100 * mean(apoe4 == 1, na.rm = TRUE)),
+    
+    CogDRisk = sprintf("%.3f (± %.2f)", mean(cogd, na.rm = TRUE), sd(cogd, na.rm = TRUE)),
+    PRSCSx = sprintf("%.3f (± %.2f)", mean(prs_z_prscsx, na.rm = TRUE), sd(prs_z_prscsx, na.rm = TRUE)),
+    SDoH = sprintf("%.3f (± %.2f)", mean(SDoH, na.rm = TRUE), sd(SDoH, na.rm = TRUE)),
+    HEA = sprintf("%.3f (± %.2f)", mean(HEA, na.rm = TRUE), sd(HEA, na.rm = TRUE)),
+    AX = sprintf("%.3f (± %.2f)", mean(AX, na.rm = TRUE), sd(AX, na.rm = TRUE)),
+    SA = sprintf("%.3f (± %.2f)", mean(SA, na.rm = TRUE), sd(SA, na.rm = TRUE)),
+    
+    `SEVLT Immediate` = sprintf("%.3f (± %.2f)", mean(zscore_interm_sevlt, na.rm = TRUE), sd(zscore_interm_sevlt, na.rm = TRUE)),
+    `SEVLT Delayed` = sprintf("%.3f (± %.2f)", mean(zscore_delay_svelt, na.rm = TRUE), sd(zscore_delay_svelt, na.rm = TRUE)),
+    `WMS-III Logical Memory I` = sprintf("%.3f (± %.2f)", mean(zscore_interm_wms_mem, na.rm = TRUE), sd(zscore_interm_wms_mem, na.rm = TRUE)),
+    `WMS-III Logical Memory II` = sprintf("%.3f (± %.2f)", mean(zscore_delay_wms_mem, na.rm = TRUE), sd(zscore_delay_wms_mem, na.rm = TRUE)),
+    `WMS-III Digit Span` = sprintf("%.3f (± %.2f)", mean(zscore_wms_digit, na.rm = TRUE), sd(zscore_wms_digit, na.rm = TRUE)),
+    `Trail Making Test A&B` = sprintf("%.3f (± %.2f)", mean(zscore_trail_ab, na.rm = TRUE), sd(zscore_trail_ab, na.rm = TRUE)),
+    `FAS` = sprintf("%.3f (± %.2f)", mean(zscore_fas, na.rm = TRUE), sd(zscore_fas, na.rm = TRUE)),
+    `Animal Making` = sprintf("%.3f (± %.2f)", mean(zscore_animal_naming, na.rm = TRUE), sd(zscore_animal_naming, na.rm = TRUE)),
+    
+    `Cortical \nThickness` = sprintf("%.2f (± %.2f)", mean(meta_roi, na.rm = TRUE), sd(meta_roi, na.rm = TRUE)),
+    `Hippo. \nVolume` = sprintf("%.2f (± %.2f)", mean(z_hippcampul_vol, na.rm = TRUE), sd(z_hippcampul_vol, na.rm = TRUE)),
+    
+    `Amyloid PET Positivity` = sprintf("%.2f (± %.2f)", mean(ab_pos_new, na.rm = TRUE), sd(ab_pos_new, na.rm = TRUE)),
+    `Amyloid PET Global SUVR` = sprintf("%.2f (± %.2f)", mean(ab_suvr, na.rm = TRUE), sd(ab_suvr, na.rm = TRUE)),
+
+    `pTau181` = sprintf("%.3f (± %.2f)", mean(ptau181, na.rm = TRUE), sd(ptau181, na.rm = TRUE)),
+    `pTau217/Aβ42` = sprintf("%.2f (± %.2f)", mean(ptau217_ab42, na.rm = TRUE), sd(ptau217_ab42, na.rm = TRUE)),
+    NfL  = sprintf("%.3f (± %.2f)", mean(nfl, na.rm = TRUE), sd(nfl, na.rm = TRUE))
+    
+  ) %>%
+  t() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("Variable")
+
+
+# Table for SEM FILM applied to predictors
+vars_complete = c("prs_z_prscsx", "cogd_sem", "apoe4", "SDoH", "lang_Spanish", "age_z", "sex", "PC1", "PC2", "PC3", "PC4")
+sem_data_complete = table_data %>%
+  dplyr::filter(if_all(all_of(vars_complete), ~ !is.na(.)))
+
+complete_summary = sem_data_complete %>%
+  summarise(
+    Total = n(),
+
+    Age = sprintf("%.1f (± %.1f)", mean(age, na.rm = TRUE), sd(age, na.rm = TRUE)),
+    Female = sprintf("%d (%.1f%%)", sum(sex == 1, na.rm = TRUE), 100 * mean(sex == 1, na.rm = TRUE)),
+    `NHW` = sprintf("%d (%.1f%%)", sum(race == "NHW", na.rm = TRUE), 100 * mean(race == "NHW", na.rm = TRUE)),
+    `Latinx` = sprintf("%d (%.1f%%)", sum(race == "Hispanic", na.rm = TRUE), 100 * mean(race == "Hispanic", na.rm = TRUE)),
+    `Black` = sprintf("%d (%.1f%%)", sum(race == "Black", na.rm = TRUE), 100 * mean(race == "Black", na.rm = TRUE)),
+    Education = sprintf("%.1f (± %.1f)", mean(id_education, na.rm = TRUE), sd(id_education, na.rm = TRUE)),
+
+    `ε4 Carrier` = sprintf("%d (%.1f%%)", sum(apoe4 == 1, na.rm = TRUE), 100 * mean(apoe4 == 1, na.rm = TRUE)),
+
+    CogDRisk = sprintf("%.3f (± %.2f)", mean(cogd, na.rm = TRUE), sd(cogd, na.rm = TRUE)),
+    PRSCSx = sprintf("%.3f (± %.2f)", mean(prs_z_prscsx, na.rm = TRUE), sd(prs_z_prscsx, na.rm = TRUE)),
+    SDoH = sprintf("%.3f (± %.2f)", mean(SDoH, na.rm = TRUE), sd(SDoH, na.rm = TRUE)),
+    HEA = sprintf("%.3f (± %.2f)", mean(HEA, na.rm = TRUE), sd(HEA, na.rm = TRUE)),
+    AX = sprintf("%.3f (± %.2f)", mean(AX, na.rm = TRUE), sd(AX, na.rm = TRUE)),
+    SA = sprintf("%.3f (± %.2f)", mean(SA, na.rm = TRUE), sd(SA, na.rm = TRUE)),
+
+    `SEVLT Immediate` = sprintf("%.3f (± %.2f)", mean(zscore_interm_sevlt, na.rm = TRUE), sd(zscore_interm_sevlt, na.rm = TRUE)),
+    `SEVLT Delayed` = sprintf("%.3f (± %.2f)", mean(zscore_delay_svelt, na.rm = TRUE), sd(zscore_delay_svelt, na.rm = TRUE)),
+    `WMS-III Logical Memory I` = sprintf("%.3f (± %.2f)", mean(zscore_interm_wms_mem, na.rm = TRUE), sd(zscore_interm_wms_mem, na.rm = TRUE)),
+    `WMS-III Logical Memory II` = sprintf("%.3f (± %.2f)", mean(zscore_delay_wms_mem, na.rm = TRUE), sd(zscore_delay_wms_mem, na.rm = TRUE)),
+    `WMS-III Digit Span` = sprintf("%.3f (± %.2f)", mean(zscore_wms_digit, na.rm = TRUE), sd(zscore_wms_digit, na.rm = TRUE)),
+    `Trail Making Test A&B` = sprintf("%.3f (± %.2f)", mean(zscore_trail_ab, na.rm = TRUE), sd(zscore_trail_ab, na.rm = TRUE)),
+    `FAS` = sprintf("%.3f (± %.2f)", mean(zscore_fas, na.rm = TRUE), sd(zscore_fas, na.rm = TRUE)),
+    `Animal Making` = sprintf("%.3f (± %.2f)", mean(zscore_animal_naming, na.rm = TRUE), sd(zscore_animal_naming, na.rm = TRUE)),
+
+    `Cortical \nThickness` = sprintf("%.2f (± %.2f)", mean(meta_roi, na.rm = TRUE), sd(meta_roi, na.rm = TRUE)),
+    `Hippo. \nVolume` = sprintf("%.2f (± %.2f)", mean(z_hippcampul_vol, na.rm = TRUE), sd(z_hippcampul_vol, na.rm = TRUE)),
+
+    `Amyloid PET Positivity` = sprintf("%.2f (± %.2f)", mean(ab_pos_new, na.rm = TRUE), sd(ab_pos_new, na.rm = TRUE)),
+    `Amyloid PET Global SUVR` = sprintf("%.2f (± %.2f)", mean(ab_suvr, na.rm = TRUE), sd(ab_suvr, na.rm = TRUE)),
+
+    `pTau181` = sprintf("%.3f (± %.2f)", mean(ptau181, na.rm = TRUE), sd(ptau181, na.rm = TRUE)),
+    `pTau217/Aβ42` = sprintf("%.2f (± %.2f)", mean(ptau217_ab42, na.rm = TRUE), sd(ptau217_ab42, na.rm = TRUE)),
+    NfL = sprintf("%.3f (± %.2f)", mean(nfl, na.rm = TRUE), sd(nfl, na.rm = TRUE))
+  ) %>%
+  t() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("Variable")
+
+table_total = total_summary %>%
+  dplyr::rename(`Total Cohort` = V1)
+table_complete = complete_summary %>%
+  dplyr::rename(`Complete Cases` = V1)
+
+combined_table = table_total %>%
+  dplyr::left_join(table_complete, by = "Variable")
+
+
+```
+
+

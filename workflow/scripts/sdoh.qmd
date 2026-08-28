@@ -1,0 +1,295 @@
+---
+title: "SDoH"
+format: html
+editor: visual
+---
+
+### Sampling
+
+```{r}
+
+data$strata = interaction(data$sex, data$race, drop = TRUE)
+
+set.seed(123456)  
+train_index = createDataPartition(y = data$strata, p = 0.5, list = FALSE)
+
+
+data_efa = data[train_index, ]
+data_cfa = data[-train_index, ]
+
+# Check balance
+table(data_efa$sex, data_efa$race)
+table(data_cfa$sex, data_cfa$race)
+
+summary(data_efa$age)
+summary(data_cfa$age)
+
+sd(data_efa$age, na.rm = TRUE)
+sd(data_cfa$age, na.rm = TRUE)
+
+```
+
+
+### Cadidate indicators
+
+```{r}
+
+chronic_stress_items = paste0("chronic_stress_", c(paste0(1:8, rep(c("", "a", "b"), each = 8))))
+
+social_support_items = paste0("social_support_", 1:12)
+
+pswq_items = paste0("pswq_", 1:16)
+
+sociodemographic_vars = c("id_income", "id_education", "id_language_primary", "us_outside",
+                           "id_marital_status", "health_status", "hc_insurance_no_insurance", "hc_pcp", 
+                           "hc_12month", "hc_last_exam", "hc_insurance_private", "hc_insurance_medicaid", "hc_insurance_medicare")
+
+all_vars = c(chronic_stress_items, social_support_items, pswq_items, sociodemographic_vars)
+
+```
+
+
+
+### EFA
+
+```{r}
+
+all_vars = c(chronic_stress_items, social_support_items, pswq_items, sociodemographic_vars)
+data_efa$us_outside = ifelse((data_efa$age - data_efa$id_u_slive) > 15, 1, 0)
+
+vars_to_keep = all_vars[sapply(data_efa[all_vars], function(x) mean(is.na(x)) <= 0.5)]
+
+efa_df = data_efa %>%
+  mutate(id_income = scale(id_income)) %>%
+  select(!!!syms(vars_to_keep)) %>%
+  drop_na()
+
+
+# factorability
+KMO(efa_df) # MSA = 0.91
+efa_data = efa_df %>% select(-c("hc_insurance_medicare", "id_marital_status", "chronic_stress_7", "chronic_stress_2"))
+KMO(efa_data) # MSA = 0.93
+bart_spher(efa_data) 
+
+
+# factor retention
+ev = eigen(cor(efa_data))
+ev$value
+scree(efa_data, pc = FALSE) 
+fa.parallel(efa_data, fa = "fa") # Actual data = eigenvalues of efa_data, simulated data = eigenvalues from a random dataset of the same size (just random noise), resampled data = eigenvalues from bootstrapped sampled from efa_data the point is to retain factors that are greater than eigenvalues from simulated data
+
+
+# Rotations 
+Nfacs = 3
+fit_pro = factanal(efa_data, Nfacs, rotation = "promax") 
+print(fit_pro, digits = 2, cutoffs = 0.3, sort = TRUE) 
+fit_var = factanal(efa_data, Nfacs, rotation = "varimax") 
+print(fit_var, digits = 2, cutoffs = 0.3, sort = TRUE)
+fit_n = factanal(efa_data, Nfacs, rotation = "none")
+print(fit_n, digits = 2, cutoffs = 0.3, sort = TRUE)
+
+
+# residual matrix
+lambda = fit_pro$loadings
+psi = diag(fit_pro$uniquenesses)
+s = fit_pro$correlation
+sigma = lambda %*% t(lambda) + psi
+round(s  - sigma, 6) 
+
+
+# visualize
+par(mfrow = c(1, 3))
+plot(fit_n$loadings[, 1],
+     fit_n$loadings[, 2],
+     xlab = "Factor 1",
+     ylab = "Factor 2",
+     ylim = c(-1, 1),
+     xlim = c(-1, 1),
+     main = "No rotation")
+abline(h = 0, v = 0)
+
+plot(fit_var$loadings[, 1],
+     fit_var$loadings[, 2],
+     xlab = "Factor 1",
+     ylab = "Factor 2",
+     ylim = c(-1, 1),
+     xlim = c(-1, 1),
+     main = "Varimax rotation")
+abline(h = 0, v = 0)
+
+plot(fit_pro$loadings[, 1],
+     fit_pro$loadings[, 2],
+     xlab = "Factor 1",
+     ylab = "Factor 2",
+     ylim = c(-1, 1),
+     xlim = c(-1, 1),
+     main = "Promax rotation")
+abline(h = 0, v = 0)
+
+
+par(mfrow = c(1, 3))
+scatterplot3d(fit_n$loadings[, 1],
+              fit_n$loadings[, 2],
+              fit_n$loadings[, 3],
+              xlab = "Factor 1",
+              ylab = "Factor 2",
+              zlab = "Factor 3",
+              main = "No Rotation")
+
+scatterplot3d(fit_var$loadings[, 1],
+              fit_var$loadings[, 2],
+              fit_var$loadings[, 3],
+              xlab = "Factor 1",
+              ylab = "Factor 2",
+              zlab = "Factor 3",
+              main = "Varimax Rotation")
+
+scatterplot3d(fit_pro$loadings[, 1],
+              fit_pro$loadings[, 2],
+              fit_pro$loadings[, 3],
+              xlab = "Factor 1",
+              ylab = "Factor 2",
+              zlab = "Factor 3",
+              main = "Promax Rotation")
+
+
+# remove redundancy to avoid multicollinearity
+pswq_data = efa_data[, pswq_items]
+pswq_polychor = polychoric(pswq_data)
+print(pswq_polychor$rho)
+
+social_support_data = efa_data[, social_support_items]
+social_support_polychor = polychoric(social_support_data)
+print(social_support_polychor$rho)
+
+chronic_stress_data = efa_data[, paste0("chronic_stress_", 3:5)]
+chronic_stress_polychor = polychoric(chronic_stress_data)
+print(chronic_stress_polychor$rho)
+
+
+# correlation matrix
+cor_mat = cor(efa_data, use = "pairwise.complete.obs")
+cor_pairs = cor_mat %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("var1") %>%
+  pivot_longer(-var1, names_to = "var2", values_to = "r") %>%
+  filter(var1 != var2) %>%                    # remove self-correlations
+  mutate(r2 = r^2) %>%
+  filter(r > 0.3) %>%                        # filter by r²
+  arrange(desc(r2))
+corrplot::corrplot(cor_mat, method = "color", type = "upper",
+         tl.col = "black", tl.srt = 90, number.cex = 0.7)
+
+
+# EFA structure
+efa_subset = efa_data %>%
+  select(
+    pswq_1, pswq_2, pswq_3, pswq_4, pswq_6, pswq_8, pswq_9, pswq_10, pswq_11, pswq_12, pswq_13, pswq_16,
+    chronic_stress_1, chronic_stress_3, chronic_stress_4, chronic_stress_5,
+    chronic_stress_6, health_status, hc_insurance_no_insurance, id_income,
+    social_support_1, social_support_2, social_support_3, social_support_5, social_support_7, social_support_8, 
+    social_support_9, social_support_10, social_support_11, social_support_12,
+    hc_pcp, hc_12month, hc_last_exam, hc_insurance_private, hc_insurance_no_insurance)
+efa_subset$id_income_rev = max(efa_subset$id_income, na.rm = TRUE) - efa_subset$id_income
+efa_subset = efa_subset %>%
+  select(-id_income) 
+
+Nfacs = 3
+fit_pro = factanal(efa_subset, Nfacs, rotation = "none") 
+print(fit_pro, digits = 2, cutoffs = 0.3, sort = TRUE)
+
+
+```
+
+
+### CFA
+
+```{r}
+
+data_cfa$us_outside = ifelse((data_cfa$age - data_cfa$id_u_slive) > 15, 1, 0)
+vars_to_keep = all_vars[sapply(data_cfa[all_vars], function(x) mean(is.na(x)) <= 0.5)]
+cfa_df = data_cfa %>%
+  mutate(id_income = scale(id_income)) %>%
+  select(!!!syms(vars_to_keep), IID) %>%
+  drop_na()
+
+
+cfa_df$id_income_rev = max(cfa_df$id_income, na.rm = TRUE) - cfa_df$id_income
+support_items = c(1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12)
+for (i in support_items) {
+  item = paste0("social_support_", i)
+  new_item = paste0(item, "_rev")
+  cfa_df[[new_item]] = 5 - cfa_df[[item]]
+}
+
+
+#AX = anxiety, SA, Social Adversity, HEA = Healthcare and Economic Access
+sdoh_fin_model = 'AX =~ pswq_1 + pswq_2 + pswq_3 + pswq_4 + pswq_6 + pswq_8 + pswq_9 + pswq_12 + pswq_13 + pswq_16
+                  HEA =~ chronic_stress_1 + chronic_stress_3 + chronic_stress_4 + chronic_stress_5 + health_status + hc_insurance_no_insurance + hc_insurance_private + id_income_rev 
+                  SA =~ social_support_1_rev + social_support_2_rev + social_support_7_rev + social_support_8_rev + social_support_9_rev + social_support_10_rev + social_support_11_rev + 
+                  social_support_12_rev
+
+                  health_status ~~ chronic_stress_1 + hc_insurance_no_insurance
+
+                  SDoH =~ HEA + SA + AX'
+
+ordered_vars = c(paste0("pswq_", 1:16), paste0("social_support_", c(1:5, 7:12), "_rev"), paste0("chronic_stress_", 1:8),"health_status", "hc_insurance_no_insurance", "us_outside")
+sdoh_fin_fit = cfa(sdoh_fin_model, data = cfa_df, estimator = "WLSMV", ordered = ordered_vars)
+summary(sdoh_fin_fit, fit.measures = TRUE, standardized = TRUE)
+residuals(sdoh_fin_fit)
+modificationindices(sdoh_fin_fit) %>% arrange(desc(mi))
+
+```
+
+
+### CFA in Total sample
+
+```{r}
+
+sdoh_data = data %>%
+  mutate(id_income = scale(id_income)) %>%
+  mutate(id_u_slive = scale(id_u_slive)) %>%
+  select(IID, !!!syms(vars_to_keep)) 
+
+# directionalaity
+sdoh_data$id_income_rev = max(sdoh_data$id_income, na.rm = TRUE) - sdoh_data$id_income
+support_items = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+for (i in support_items) {
+  item = paste0("social_support_", i)
+  new_item = paste0(item, "_rev")
+  sdoh_data[[new_item]] = 5 - sdoh_data[[item]]
+}
+sdoh_data$hc_insurance_private_rev = 1 - sdoh_data$hc_insurance_private
+sdoh_data$id_education_rev = 1 - sdoh_data$id_education
+
+# final model
+sdoh_fin_model = 'AX =~ pswq_1 + pswq_2 + pswq_3 + pswq_4 + pswq_6 + pswq_5 + pswq_7 + pswq_8 + pswq_9 + + pswq_10 + pswq_11 + pswq_12 + pswq_13 + pswq_14 + pswq_15 + pswq_16
+                  HEA =~ chronic_stress_1 + chronic_stress_3 + chronic_stress_4 + chronic_stress_5 + health_status + hc_insurance_no_insurance + id_income_rev + id_education_rev
+                  SA =~ social_support_1_rev + social_support_2_rev + social_support_4_rev + social_support_5_rev + social_support_6_rev + social_support_7_rev + 
+                  social_support_8_rev + social_support_9_rev + social_support_10_rev + social_support_11_rev + social_support_12_rev
+
+                  health_status ~~ chronic_stress_1 + hc_insurance_no_insurance
+
+                  SDoH =~ HEA + SA + AX'
+
+ordered_vars = c(paste0("pswq_", 1:16), paste0("social_support_", c(1:12), "_rev"), paste0("chronic_stress_", 1:8), "health_status", "hc_insurance_no_insurance")
+sdoh_fin_fit = cfa(sdoh_fin_model, data = sdoh_data, estimator = "WLSMV", ordered = ordered_vars)
+summary(sdoh_fin_fit, fit.measures = TRUE, standardized = TRUE)
+residuals(sdoh_fin_fit)
+modificationindices(sdoh_fin_fit) %>% arrange(desc(mi))
+
+
+# extract scores
+sdoh_scores = as.data.frame(lavPredict(sdoh_fin_fit))
+case_idx = lavInspect(sdoh_fin_fit, "case.idx")
+
+sem_data2 = sem_data %>%
+  mutate(row_id = row_number())
+sdoh_scores$row_id = sem_data2$row_id[case_idx]
+sem_data_sdoh = sem_data2 %>%
+  left_join(sdoh_scores, by = "row_id")
+
+
+```
+
+
